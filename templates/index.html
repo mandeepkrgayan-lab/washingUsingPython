@@ -1,16 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>WashSmart</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Welcome to WashSmart</h1>
-        <form method="POST">
-            <input type="text" name="phone" placeholder="Enter phone number" required>
-            <button type="submit">Check Subscription</button>
-        </form>
-    </div>
-</body>
-</html>
+<form method="POST" action="/check">
+  <label>Enter your phone number:</label>
+  <input type="text" name="phone" required>
+  <button type="submit">Check</button>
+</form>

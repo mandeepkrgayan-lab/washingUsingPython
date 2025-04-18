@@ -1,108 +1,76 @@
-from flask import Flask, render_template, request, redirect, url_for
-import sqlite3
+from flask import Flask, render_template, request, redirect
+import mysql.connector
 from datetime import datetime, timedelta
-import requests
 import os
 
 app = Flask(__name__)
-DATABASE = 'db.sqlite'
-MACHINE_URL = 'https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html'
 
-def init_db():
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS subscriptions (
-        phone TEXT PRIMARY KEY,
-        expiry TEXT
-    )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS status (
-        in_use TEXT,
-        start_time TEXT
-    )''')
-    c.execute("INSERT OR IGNORE INTO status (rowid, in_use, start_time) VALUES (1, 'false', '')")
-    conn.commit()
-    conn.close()
+def get_connection():
+    return mysql.connector.connect(
+        host=os.environ.get("MYSQL_HOST", "localhost"),
+        user=os.environ.get("MYSQL_USER", "youruser"),
+        password=os.environ.get("MYSQL_PASSWORD", "yourpassword"),
+        database=os.environ.get("MYSQL_DB", "yourdbname")
+    )
 
-def get_status():
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute("SELECT in_use, start_time FROM status WHERE rowid = 1")
-    row = c.fetchone()
-    conn.close()
-    return row[0], row[1]
-
-def update_status(in_use, start_time=""):
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute("UPDATE status SET in_use = ?, start_time = ? WHERE rowid = 1", (in_use, start_time))
-    conn.commit()
-    conn.close()
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route("/")
 def index():
-    if request.method == 'POST':
-        phone = request.form['phone']
-        now = datetime.now()
-        in_use, start_time = get_status()
-        if in_use == "true":
-            remaining = 30 - (now - datetime.fromisoformat(start_time)).seconds // 60
-            if remaining > 0:
-                return render_template("in_use.html", minutes=remaining)
-            else:
-                update_status("false")
-
-        conn = sqlite3.connect(DATABASE)
-        c = conn.cursor()
-        c.execute("SELECT expiry FROM subscriptions WHERE phone = ?", (phone,))
-        row = c.fetchone()
-        conn.close()
-
-        if row:
-            expiry_date = datetime.strptime(row[0], "%Y-%m-%d")
-            if expiry_date >= now:
-                return render_template("active.html", phone=phone)
-            else:
-                return render_template("payment.html", phone=phone)
-        else:
-            return render_template("payment.html", phone=phone)
     return render_template("index.html")
 
-@app.route('/activate', methods=['POST'])
-def activate():
-    phone = request.form['phone']
-    requests.get(MACHINE_URL)
-    update_status("true", datetime.now().isoformat())
-    return f"Washing machine activated for 30 minutes for {phone}."
+@app.route("/check", methods=["POST"])
+def check():
+    phone = request.form["phone"]
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT expiry FROM subscriptions WHERE phone = %s", (phone,))
+    result = cursor.fetchone()
 
-@app.route('/subscribe', methods=['POST'])
-def subscribe():
-    plan = request.form['plan']
-    phone = request.form['phone']
-    if plan == "daily":
-        amount = 79
-        days = 1
-    elif plan == "weekly":
-        amount = 119
-        days = 7
+    cursor.execute("SELECT in_use, end_time FROM machine_status WHERE id = 1")
+    machine = cursor.fetchone()
+
+    now = datetime.now()
+
+    if machine["in_use"] and machine["end_time"] > now:
+        remaining = int((machine["end_time"] - now).total_seconds() / 60)
+        return render_template("in_use.html", minutes=remaining)
+
+    if result and result["expiry"] >= now.date():
+        return render_template("active.html", phone=phone)
     else:
-        amount = 199
-        days = 30
+        return render_template("payment.html", phone=phone)
 
-    return render_template("post_payment.html", phone=phone, days=days)
+@app.route("/post_payment", methods=["POST"])
+def post_payment():
+    phone = request.form["phone"]
+    plan = request.form["plan"]
+    days = {"daily": 1, "weekly": 7, "monthly": 30}[plan]
+    expiry = datetime.today().date() + timedelta(days=days)
 
-@app.route('/update', methods=['POST'])
-def update():
-    phone = request.form['phone']
-    days = int(request.form['days'])
-    new_expiry = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO subscriptions (phone, expiry) VALUES (?, ?)", (phone, new_expiry))
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO subscriptions (phone, expiry) VALUES (%s, %s) ON DUPLICATE KEY UPDATE expiry = %s",
+                   (phone, expiry, expiry))
     conn.commit()
+    cursor.close()
     conn.close()
-    return render_template("active.html", phone=phone)
+    return render_template("post_payment.html", phone=phone, new_expiry=expiry)
 
-if __name__ == '__main__':
-    init_db()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+@app.route("/turn_on", methods=["POST"])
+def turn_on():
+    phone = request.form["phone"]
+    end_time = datetime.now() + timedelta(minutes=30)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE machine_status SET in_use = TRUE, end_time = %s WHERE id = 1", (end_time,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    import requests
+    requests.get("https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html")
+
+    return render_template("started.html", phone=phone)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

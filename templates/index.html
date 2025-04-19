@@ -1,83 +1,129 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WashSmart</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <meta charset="UTF-8">
+  <title>WashSmart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 100%;
+    }
+    input {
+      padding: 10px;
+      width: 80%;
+      border-radius: 5px;
+      border: none;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+    button:hover {
+      background: #ddd;
+    }
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>WashSmart</h1>
-        <input type="text" id="phone" placeholder="Enter your phone number">
-        <button onclick="check()">Check</button>
-        <div id="status"></div>
-    </div>
+  <div id="container">
+    <h2>WashSmart</h2>
+    <input type="text" id="phone" placeholder="Enter phone number" />
+    <br>
+    <button onclick="check()">Check</button>
+    <div class="loader" id="loader"></div>
+    <div id="result"></div>
+  </div>
 
-    <script>
-        function check() {
-            const phone = document.getElementById('phone').value;
-            document.getElementById('status').innerHTML = 'Checking...';
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    function showLoader(show) {
+      document.getElementById("loader").style.display = show ? "block" : "none";
+    }
 
-            fetch('/check', {
-                method: 'POST',
-                body: new URLSearchParams({phone})
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'active') {
-                    document.getElementById('status').innerHTML = `<button onclick="turnOn()">Turn On</button>`;
-                } else if (data.status === 'expired' || data.status === 'new') {
-                    showPlans();
-                } else if (data.status === 'inUse') {
-                    document.getElementById('status').innerHTML = `Another user is using it. Time remaining: ${data.remaining} min`;
-                }
-            });
-        }
-
-        function showPlans() {
-            document.getElementById('status').innerHTML = `
-                <button onclick="pay(79,1)">Daily - ₹79</button>
-                <button onclick="pay(119,7)">Weekly - ₹119</button>
-                <button onclick="pay(199,30)">Monthly - ₹199</button>
+    function check() {
+      const phone = document.getElementById("phone").value;
+      if (!phone) return alert("Enter phone number");
+      showLoader(true);
+      fetch(`/check?phone=${phone}`)
+        .then(res => res.json())
+        .then(data => {
+          showLoader(false);
+          const result = document.getElementById("result");
+          result.innerHTML = data.message;
+          if (data.action === 'pay') {
+            result.innerHTML += `
+              <br><button onclick="pay('${phone}', 79, 1)">Daily - ₹79</button>
+              <button onclick="pay('${phone}', 119, 7)">Weekly - ₹119</button>
+              <button onclick="pay('${phone}', 199, 30)">Monthly - ₹199</button>
             `;
-        }
+          }
+        });
+    }
 
-        function pay(amount, days) {
-            const options = {
-                key: "rzp_test_NhQFMV57BI5o45",
-                amount: amount * 100,
-                currency: "INR",
-                name: "WashSmart",
-                description: "Subscription",
-                handler: function () {
-                    const phone = document.getElementById('phone').value;
-                    fetch('/update', {
-                        method: 'POST',
-                        body: new URLSearchParams({phone, days})
-                    }).then(res => res.json())
-                      .then(() => check());
-                },
-                prefill: {
-                    contact: document.getElementById('phone').value
-                },
-                theme: {
-                    color: "#3399cc"
-                }
-            };
-            const rzp = new Razorpay(options);
-            rzp.open();
-        }
+    function pay(phone, amount, days) {
+      const options = {
+        key: "rzp_test_NhQFMV57BI5o45",
+        amount: amount * 100,
+        currency: "INR",
+        name: "WashSmart",
+        description: `${days} day subscription`,
+        handler: function () {
+          fetch(`/update_expiry`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, days })
+          }).then(() => check());
+        },
+        prefill: { contact: phone }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
 
-        function turnOn() {
-            fetch('/turnon', {
-                method: 'POST'
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('status').innerHTML = 'Machine turned on for 30 minutes!';
-                fetch(data.url); // silently open the plug URL
-            });
-        }
-    </script>
+    function turnOn() {
+      fetch('/turn_on', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: document.getElementById("phone").value })
+      }).then(() => check());
+    }
+  </script>
 </body>
 </html>

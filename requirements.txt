@@ -3,3 +3,5 @@ mysql-connector-python
 
 werkzeug==2.2.3
 requests
+
+psycopg2-binary

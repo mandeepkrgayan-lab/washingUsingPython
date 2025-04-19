@@ -1,76 +1,106 @@
-from flask import Flask, render_template, request, redirect
-import mysql.connector
+from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
+import psycopg2
+import threading
+import time
 import os
 
 app = Flask(__name__)
 
-def get_connection():
-    return mysql.connector.connect(
-        host=os.environ.get("MYSQL_HOST", "localhost"),
-        user=os.environ.get("MYSQL_USER", "youruser"),
-        password=os.environ.get("MYSQL_PASSWORD", "yourpassword"),
-        database=os.environ.get("MYSQL_DB", "yourdbname")
-    )
+# PostgreSQL DB config from Render Environment Variables
+DB_URL = os.environ.get("DATABASE_URL")
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+def get_db_connection():
+    return psycopg2.connect(DB_URL, sslmode='require')
 
-@app.route("/check", methods=["POST"])
-def check():
-    phone = request.form["phone"]
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT expiry FROM subscriptions WHERE phone = %s", (phone,))
-    result = cursor.fetchone()
+# Initialize DB
+def init_db():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            phone TEXT PRIMARY KEY,
+            expiry DATE
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS usage (
+            id SERIAL PRIMARY KEY,
+            inUse TEXT DEFAULT 'false',
+            startTime TIMESTAMP
+        )
+    ''')
+    c.execute("SELECT COUNT(*) FROM usage")
+    if c.fetchone()[0] == 0:
+        c.execute("INSERT INTO usage (inUse, startTime) VALUES ('false', NULL)")
+    conn.commit()
+    conn.close()
 
-    cursor.execute("SELECT in_use, end_time FROM machine_status WHERE id = 1")
-    machine = cursor.fetchone()
+init_db()
 
-    now = datetime.now()
+@app.route('/check', methods=['POST'])
+def check_subscription():
+    phone = request.form['phone']
+    today = datetime.today().date()
 
-    if machine["in_use"] and machine["end_time"] > now:
-        remaining = int((machine["end_time"] - now).total_seconds() / 60)
-        return render_template("in_use.html", minutes=remaining)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT expiry FROM subscriptions WHERE phone = %s", (phone,))
+    result = c.fetchone()
 
-    if result and result["expiry"] >= now.date():
-        return render_template("active.html", phone=phone)
+    c.execute("SELECT inUse, startTime FROM usage LIMIT 1")
+    usage = c.fetchone()
+    conn.close()
+
+    if usage[0] == "true":
+        elapsed = (datetime.now() - usage[1]).seconds
+        remaining = 1800 - elapsed
+        return jsonify({"status": "inUse", "remaining": remaining // 60})
+
+    if result:
+        expiry = result[0]
+        if expiry >= today:
+            return jsonify({"status": "active"})
+        else:
+            return jsonify({"status": "expired"})
     else:
-        return render_template("payment.html", phone=phone)
+        return jsonify({"status": "new"})
 
-@app.route("/post_payment", methods=["POST"])
-def post_payment():
-    phone = request.form["phone"]
-    plan = request.form["plan"]
-    days = {"daily": 1, "weekly": 7, "monthly": 30}[plan]
-    expiry = datetime.today().date() + timedelta(days=days)
+@app.route('/update', methods=['POST'])
+def update_subscription():
+    phone = request.form['phone']
+    days = int(request.form['days'])
+    expiry = (datetime.today() + timedelta(days=days)).date()
 
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO subscriptions (phone, expiry) VALUES (%s, %s) ON DUPLICATE KEY UPDATE expiry = %s",
-                   (phone, expiry, expiry))
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO subscriptions (phone, expiry) 
+        VALUES (%s, %s)
+        ON CONFLICT (phone) DO UPDATE SET expiry = EXCLUDED.expiry
+    """, (phone, expiry))
     conn.commit()
-    cursor.close()
     conn.close()
-    return render_template("post_payment.html", phone=phone, new_expiry=expiry)
 
-@app.route("/turn_on", methods=["POST"])
+    return jsonify({"status": "updated"})
+
+@app.route('/turnon', methods=['POST'])
 def turn_on():
-    phone = request.form["phone"]
-    end_time = datetime.now() + timedelta(minutes=30)
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE machine_status SET in_use = TRUE, end_time = %s WHERE id = 1", (end_time,))
+    threading.Thread(target=auto_reset_inuse).start()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("UPDATE usage SET inUse = 'true', startTime = %s WHERE id = 1", (datetime.now(),))
     conn.commit()
-    cursor.close()
+    conn.close()
+    return jsonify({"url": "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html"})
+
+def auto_reset_inuse():
+    time.sleep(1800)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("UPDATE usage SET inUse = 'false', startTime = NULL WHERE id = 1")
+    conn.commit()
     conn.close()
 
-    import requests
-    requests.get("https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html")
-
-    return render_template("started.html", phone=phone)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+if __name__ == '__main__':
+    app.run(debug=True)

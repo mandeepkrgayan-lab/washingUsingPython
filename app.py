@@ -3,16 +3,18 @@ import pymysql
 from datetime import datetime, timedelta
 import threading
 import os
+import requests
 
 app = Flask(__name__)
 
-# Get MySQL connection details from environment variables
+# MySQL config from environment
 DB_HOST = os.getenv("MYSQLHOST")
 DB_USER = os.getenv("MYSQLUSER")
 DB_PASSWORD = os.getenv("MYSQLPASSWORD")
 DB_NAME = os.getenv("MYSQLDATABASE")
 
 TRIGGER_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html"
+FORCE_OFF_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=f7fdcb3b-c16d-4601-90e6-f0729cc038ac&token=3ac706a2-1e9a-4b07-90ef-116be4142ef7&response=json"
 
 def get_connection():
     return pymysql.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
@@ -41,11 +43,20 @@ def check():
     phone = request.args.get("phone")
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT expiry, in_use, used_at FROM users WHERE phone=%s", (phone,))
-    row = cur.fetchone()
 
+    # Auto reset in_use if any user has crossed 30 minutes
     cur.execute("SELECT phone, used_at FROM users WHERE in_use=TRUE")
     active_user = cur.fetchone()
+    if active_user:
+        phone_active, used_at = active_user
+        elapsed = datetime.now() - used_at
+        if elapsed.total_seconds() > 1800:
+            cur.execute("UPDATE users SET in_use=FALSE, used_at=NULL WHERE phone=%s", (phone_active,))
+            conn.commit()
+            active_user = None
+
+    cur.execute("SELECT expiry, in_use, used_at FROM users WHERE phone=%s", (phone,))
+    row = cur.fetchone()
 
     message = ""
     action = ""
@@ -106,25 +117,37 @@ def turn_on():
     cur.close()
     conn.close()
 
-    # Auto turn off after 30 mins
     def turn_off():
         conn = get_connection()
         cur = conn.cursor()
-        cur.execute("UPDATE users SET in_use=FALSE WHERE phone=%s", (phone,))
+        cur.execute("UPDATE users SET in_use=FALSE, used_at=NULL WHERE phone=%s", (phone,))
         conn.commit()
         cur.close()
         conn.close()
 
     threading.Timer(1800, turn_off).start()
+
     try:
-        import requests
         requests.get(TRIGGER_URL)
     except:
         pass
 
     return "Activated"
 
+@app.route("/force_turn_off", methods=["POST"])
+def force_turn_off():
+    try:
+        requests.get(FORCE_OFF_URL)
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET in_use=FALSE, used_at=NULL WHERE in_use=TRUE")
+        conn.commit()
+        cur.close()
+        conn.close()
+        return "Force Turned Off"
+    except Exception as e:
+        return str(e), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Railway injects PORT
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

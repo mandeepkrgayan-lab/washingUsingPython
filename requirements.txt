@@ -1,4 +1,5 @@
 Flask
+pymysql
 mysql-connector-python
 
 werkzeug==2.2.3

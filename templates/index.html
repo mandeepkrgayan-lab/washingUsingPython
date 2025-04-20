@@ -88,6 +88,31 @@
     .subscription-buttons button {
       margin: 5px 0;
     }
+
+    .footer {
+      margin-top: 80px;
+      font-size: 10px;
+      color: #eee;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    .footer a {
+      color: #fff;
+      text-decoration: underline;
+      display: block;
+      margin: 2px 0;
+    }
+
+    .turnoff-container {
+      margin-top: 60px;
+      text-align: center;
+    }
+
+    .turnoff-container button {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
   </style>
 </head>
 <body>
@@ -98,6 +123,18 @@
     <button onclick="check()">Check</button>
     <div class="loader" id="loader"></div>
     <div id="result"></div>
+
+    <div class="turnoff-container">
+      <button onclick="forceTurnOff()">Turn Off</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://merchant.razorpay.com/policy/QlcVypBYykpeic/terms" target="_blank">Terms and Conditions</a>
+    <a href="https://merchant.razorpay.com/policy/QlcVypBYykpeic/privacy" target="_blank">Privacy Policy</a>
+    <a href="https://merchant.razorpay.com/policy/QlcVypBYykpeic/refund" target="_blank">Cancellations and Refunds</a>
+    <a href="https://merchant.razorpay.com/policy/QlcVypBYykpeic/shipping" target="_blank">Shipping Policy</a>
+    <a href="https://merchant.razorpay.com/policy/QlcVypBYykpeic/contact_us" target="_blank">Contact Us</a>
   </div>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -148,21 +185,11 @@
       rzp.open();
     }
 
-    function turnOn() {
-      fetch('/turn_on', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: document.getElementById("phone").value })
+    function forceTurnOff() {
+      fetch("/force_turn_off", {
+        method: "POST"
       }).then(() => check());
     }
-    
-  function forceTurnOff() {
-    fetch("/force_turn_off", {
-      method: "POST"
-    }).then(() => check());
-  }
   </script>
-  <button onclick="forceTurnOff()" style="margin-top: 10px; font-size: 12px; padding: 6px 10px;">Turn Off</button>
-
 </body>
 </html>

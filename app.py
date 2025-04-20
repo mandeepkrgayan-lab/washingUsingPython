@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, jsonify
-import os
 import psycopg2
 from datetime import datetime, timedelta
 import threading
 
 app = Flask(__name__)
 
-DB_URL = os.getenv('DATABASE_URL')  # Set this in Render
+# Directly using Railway's PostgreSQL URL
+DB_URL = "postgresql://postgres:gtfjivilaEftYvlzLfGdHqdXNpJCCVgG@postgres.railway.internal:5432/railway"
+
+# Virtual Smart Plug trigger URL
 TRIGGER_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html"
 
 def get_db_connection():
@@ -78,7 +80,11 @@ def update_expiry():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO users (phone, expiry) VALUES (%s, %s) ON CONFLICT (phone) DO UPDATE SET expiry = EXCLUDED.expiry", (phone, expiry))
+    cur.execute("""
+        INSERT INTO users (phone, expiry)
+        VALUES (%s, %s)
+        ON CONFLICT (phone) DO UPDATE SET expiry = EXCLUDED.expiry
+    """, (phone, expiry))
     conn.commit()
     cur.close()
     conn.close()
@@ -94,7 +100,7 @@ def turn_on():
     cur.close()
     conn.close()
 
-    # Auto-turn-off in 30 mins
+    # Auto-turn-off after 30 mins
     def turn_off():
         conn = get_db_connection()
         cur = conn.cursor()
@@ -104,11 +110,13 @@ def turn_on():
         conn.close()
 
     threading.Timer(1800, turn_off).start()
+
     try:
         import requests
         requests.get(TRIGGER_URL)
     except:
         pass
+
     return "Activated"
 
 if __name__ == "__main__":

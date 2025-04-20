@@ -12,7 +12,7 @@ DB_URL = "postgresql://postgres:gtfjivilaEftYvlzLfGdHqdXNpJCCVgG@postgres.railwa
 TRIGGER_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html"
 
 def get_db_connection():
-    return psycopg2.connect(DB_URL, sslmode='require')
+   return psycopg2.connect(DB_URL)
 
 def init_db():
     conn = get_db_connection()

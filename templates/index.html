@@ -1,168 +1,119 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>WashSmart</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root {
-      --primary-color: #0093E9;
-      --secondary-color: #80D0C7;
-      --text-color: #ffffff;
-      --card-bg: rgba(255, 255, 255, 0.1);
-    }
+    <title>WashSmart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-      color: var(--text-color);
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-    }
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
 
-    #container {
-      background: var(--card-bg);
-      padding: 30px 20px;
-      border-radius: 15px;
-      text-align: center;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-      max-width: 400px;
-      width: 100%;
-    }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
 
-    h2 {
-      margin-top: 15px;
-    }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
 
-    input, button {
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
 
-    button {
-      background: #ffffff;
-      color: #333;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
+        button:hover {
+            background: #0056b3;
+        }
 
-    button:hover {
-      background: #eeeeee;
-    }
+        #output {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #444;
+        }
 
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #fff;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-      margin: 10px auto;
-      display: none;
-    }
+        .turn-off-section {
+            margin-top: 100px;
+            text-align: center;
+        }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+        .turn-off-button {
+            background: #dc3545;
+        }
 
-    .logo {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      margin-bottom: 10px;
-    }
-
-    .subscription-buttons button {
-      margin: 5px 0;
-    }
-  </style>
+        .turn-off-button:hover {
+            background: #a71d2a;
+        }
+    </style>
 </head>
 <body>
-  <div id="container">
-    <img src="https://cdn-icons-png.flaticon.com/512/3322/3322056.png" alt="Washing Machine Logo" class="logo">
-    <h2>Tycoon2.0 WashSmart</h2>
-    <input type="text" id="phone" placeholder="Enter phone number" />
-    <button onclick="check()">Check</button>
-    <div class="loader" id="loader"></div>
-    <div id="result"></div>
-  </div>
+    <div class="container">
+        <h1>WashSmart</h1>
+        <input type="text" id="phone" placeholder="Enter phone number">
+        <button onclick="check()">Check</button>
+        <div id="output"></div>
 
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script>
-    function showLoader(show) {
-      document.getElementById("loader").style.display = show ? "block" : "none";
-    }
+        <div class="turn-off-section">
+            <button class="turn-off-button" onclick="turnOff()">Force Turn Off</button>
+        </div>
+    </div>
 
-    function check() {
-      const phone = document.getElementById("phone").value;
-      if (!phone) return alert("Enter phone number");
-      showLoader(true);
-      fetch(`/check?phone=${phone}`)
-        .then(res => res.json())
-        .then(data => {
-          showLoader(false);
-          const result = document.getElementById("result");
-          result.innerHTML = data.message;
-          if (data.action === 'pay') {
-            result.innerHTML += `
-              <div class="subscription-buttons">
-                <button onclick="pay('${phone}', 79, 1)">Daily - ₹79</button>
-                <button onclick="pay('${phone}', 119, 7)">Weekly - ₹119</button>
-                <button onclick="pay('${phone}', 199, 30)">Monthly - ₹199</button>
-              </div>
-            `;
-          }
-        });
-    }
+    <script>
+        function check() {
+            const phone = document.getElementById("phone").value;
+            fetch(`/check?phone=${phone}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("output").innerHTML = data.message;
+                    if (data.action === "pay") {
+                        // Add your Razorpay payment options or redirection logic here
+                    }
+                });
+        }
 
-    function pay(phone, amount, days) {
-      const options = {
-        key: "rzp_test_NhQFMV57BI5o45",
-        amount: amount * 100,
-        currency: "INR",
-        name: "WashSmart",
-        description: `${days} day subscription`,
-        handler: function () {
-          fetch(`/update_expiry`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone, days })
-          }).then(() => check());
-        },
-        prefill: { contact: phone }
-      };
-      const rzp = new Razorpay(options);
-      rzp.open();
-    }
+        function turnOn() {
+            const phone = document.getElementById("phone").value;
+            fetch("/turn_on", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ phone: phone })
+            })
+            .then(res => res.text())
+            .then(msg => alert("Machine turned on"));
+        }
 
-    function turnOn() {
-      fetch('/turn_on', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: document.getElementById("phone").value })
-      }).then(() => check());
-    }
-    
-  function forceTurnOff() {
-    fetch("/force_turn_off", {
-      method: "POST"
-    }).then(() => check());
-  }
-  </script>
-  <button onclick="forceTurnOff()" style="margin-top: 10px; font-size: 12px; padding: 6px 10px;">Turn Off</button>
-
+        function turnOff() {
+            fetch("/force_turn_off", {
+                method: "POST"
+            })
+            .then(res => res.text())
+            .then(msg => alert("Machine turned off"));
+        }
+    </script>
 </body>
 </html>

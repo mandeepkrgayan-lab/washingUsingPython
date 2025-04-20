@@ -59,7 +59,12 @@ def check():
                 remaining = 1800 - elapsed.total_seconds()
                 message = f"Another user is using it. Time left: {int(remaining // 60)} min"
             elif in_use:
-                message = "Machine is currently ON."
+                elapsed = datetime.now() - used_at
+                remaining = 1800 - elapsed.total_seconds()
+                if remaining > 0:
+                    message = f"Machine is currently ON.<br>Time remaining: {int(remaining // 60)} min"
+                else:
+                    message = "Machine is currently ON."
             else:
                 message = '<button onclick="turnOn()">Turn On</button>'
         else:

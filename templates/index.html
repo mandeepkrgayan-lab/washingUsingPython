@@ -1,76 +1,126 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>WashSmart</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #0093E9;
-      --secondary-color: #80D0C7;
-      --text-color: #ffffff;
-      --card-bg: rgba(255, 255, 255, 0.1);
+      --primary-color: #000000;
+      --secondary-color: #1D1D1F;
+      --text-color: #F5F5F7;
+      --card-bg: rgba(245, 245, 247, 0.08);
+      --accent-color: #0071E3;
+      --danger-color: #FF3B30;
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--primary-color);
       color: var(--text-color);
       margin: 0;
-      padding: 20px;
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
       min-height: 100vh;
+      line-height: 1.5;
+      letter-spacing: -0.3px;
     }
 
     #container {
       background: var(--card-bg);
-      padding: 30px 20px;
-      border-radius: 15px;
+      padding: 40px 30px;
+      border-radius: 18px;
       text-align: center;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-      max-width: 400px;
-      width: 100%;
-    }
-
-    h2 {
-      margin-top: 15px;
-    }
-
-    input, button {
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 100%;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      max-width: 380px;
+      width: 90%;
+      margin: 80px auto 30px;
       box-sizing: border-box;
     }
 
-    button {
-      background: #ffffff;
-      color: #333;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
+    h2 {
+      margin: 20px 0 10px;
+      font-size: 28px;
+      font-weight: 600;
+      background: linear-gradient(45deg, #0071E3, #00A2FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    button:hover {
-      background: #eeeeee;
+    input {
+      padding: 14px 20px;
+      font-size: 17px;
+      border-radius: 12px;
+      border: none;
+      margin: 15px 0;
+      width: 100%;
+      background: rgba(245, 245, 247, 0.05);
+      color: var(--text-color);
+      border: 1px solid rgba(245, 245, 247, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      background: rgba(0, 113, 227, 0.1);
+    }
+
+    button {
+      padding: 14px 20px;
+      font-size: 17px;
+      border-radius: 12px;
+      border: none;
+      margin: 10px 0;
+      width: 100%;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .primary-btn {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #0077ED;
+      transform: translateY(-1px);
+    }
+
+    .secondary-btn {
+      background: rgba(245, 245, 247, 0.1);
+      color: var(--text-color);
+    }
+
+    .secondary-btn:hover {
+      background: rgba(245, 245, 247, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .danger-btn {
+      background: var(--danger-color);
+      color: white;
+    }
+
+    .danger-btn:hover {
+      background: #FF453A;
+      transform: translateY(-1px);
     }
 
     .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #fff;
+      border: 3px solid rgba(245, 245, 247, 0.2);
+      border-top: 3px solid var(--accent-color);
       border-radius: 50%;
-      width: 30px;
-      height: 30px;
+      width: 24px;
+      height: 24px;
       animation: spin 1s linear infinite;
-      margin: 10px auto;
+      margin: 20px auto;
       display: none;
     }
 
@@ -83,22 +133,108 @@
       width: 80px;
       height: 80px;
       object-fit: contain;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
+      filter: drop-shadow(0 4px 12px rgba(0, 113, 227, 0.3));
     }
 
     .subscription-buttons button {
-      margin: 5px 0;
+      margin: 8px 0;
+    }
+
+    #result {
+      margin: 20px 0;
+      font-size: 17px;
+      font-weight: 400;
+    }
+
+    .footer {
+      width: 100%;
+      padding: 30px 0;
+      text-align: center;
+      background: rgba(29, 29, 31, 0.7);
+      margin-top: auto;
+    }
+
+    .footer a {
+      color: var(--text-color);
+      margin: 0 15px;
+      text-decoration: none;
+      font-size: 14px;
+      opacity: 0.8;
+      transition: opacity 0.3s;
+    }
+
+    .footer a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
+    .footer p {
+      margin: 15px 0 0;
+      font-size: 12px;
+      opacity: 0.6;
+    }
+
+    .power-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--danger-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 59, 48, 0.3);
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .power-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(255, 59, 48, 0.4);
+    }
+
+    .power-btn i {
+      color: white;
+      font-size: 24px;
     }
   </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
   <div id="container">
     <img src="https://cdn-icons-png.flaticon.com/512/3322/3322056.png" alt="Washing Machine Logo" class="logo">
-    <h2>Tycoon2.0 WashSmart</h2>
-    <input type="text" id="phone" placeholder="Enter phone number" />
-    <button onclick="check()">Check</button>
+    <h2>WashSmart</h2>
+    <input type="tel" id="phone" placeholder="Enter phone number" />
+    <button class="primary-btn" onclick="check()">Check Status</button>
     <div class="loader" id="loader"></div>
     <div id="result"></div>
+  </div>
+
+  <div class="power-btn" onclick="forceTurnOff()">
+    <i class="fas fa-power-off"></i>
+  </div>
+
+  <div id="contentModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <footer>
+      <div class="footer-links">
+        <a href="#" onclick="showContent('contact')">Contact Us</a>
+        <a href="#" onclick="showContent('terms')">Terms</a>
+        <a href="#" onclick="showContent('refund')">Refunds</a>
+        <a href="#" onclick="showContent('privacy')">Privacy</a>
+      </div>
+      <p>&copy; 2025 WashSmart. All rights reserved.</p>
+    </footer>
   </div>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -109,7 +245,7 @@
 
     function check() {
       const phone = document.getElementById("phone").value;
-      if (!phone) return alert("Enter phone number");
+      if (!phone) return alert("Please enter your phone number");
       showLoader(true);
       fetch(`/check?phone=${phone}`)
         .then(res => res.json())
@@ -120,12 +256,16 @@
           if (data.action === 'pay') {
             result.innerHTML += `
               <div class="subscription-buttons">
-                <button onclick="pay('${phone}', 79, 1)">Daily - ₹79</button>
-                <button onclick="pay('${phone}', 119, 7)">Weekly - ₹119</button>
-                <button onclick="pay('${phone}', 199, 30)">Monthly - ₹199</button>
+                <button class="secondary-btn" onclick="pay('${phone}', 79, 1)">Daily - ₹79</button>
+                <button class="secondary-btn" onclick="pay('${phone}', 119, 7)">Weekly - ₹119</button>
+                <button class="secondary-btn" onclick="pay('${phone}', 199, 30)">Monthly - ₹199</button>
               </div>
             `;
           }
+        })
+        .catch(() => {
+          showLoader(false);
+          alert("An error occurred. Please try again.");
         });
     }
 
@@ -143,64 +283,101 @@
             body: JSON.stringify({ phone, days })
           }).then(() => check());
         },
-        prefill: { contact: phone }
+        prefill: { contact: phone },
+        theme: { color: "#0071E3" }
       };
       const rzp = new Razorpay(options);
       rzp.open();
     }
 
-    function turnOn() {
-      fetch('/turn_on', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: document.getElementById("phone").value })
-      }).then(() => check());
+    function forceTurnOff() {
+      if (confirm("Are you sure you want to turn off the machine?")) {
+        fetch("/force_turn_off", {
+          method: "POST"
+        }).then(() => alert("Machine turned off successfully"));
+      }
+    }
+    function showContent(type) {
+      const modal = document.getElementById('contentModal');
+      const content = document.getElementById('modalContent');
+      
+      let html = '';
+      switch(type) {
+        case 'contact':
+          html = `
+            <h3>Contact Us</h3>
+            <p>For any inquiries or support, please reach out to us:</p>
+            <p><strong>Email:</strong> mkrgayan@gmail.com</p>
+            <p><strong>Phone:</strong> +91 7664000017</p>
+            <p><strong>Address:</strong> Block H ,NERIST </p>
+            <p> Available to assist you with any questions regarding your WashSmart service.</p>
+          `;
+          break;
+          
+        case 'terms':
+          html = `
+            <h3>Terms and Conditions</h3>
+            <p>By using WashSmart services, you agree to the following terms:</p>
+            <ol>
+              <li>Subscriptions are non-transferable and valid only for the registered user</li>
+              <li>Each wash cycle must be initiated by the subscribed user</li>
+              <li>Misuse of the service may result in account termination</li>
+              <li>We reserve the right to modify subscription plans and pricing</li>
+              <li>Users are responsible for maintaining their account credentials</li>
+            </ol>
+            <p>Last updated: April 2025</p>
+          `;
+          break;
+          
+        case 'refund':
+          html = `
+            <h3>Cancellations and Refunds</h3>
+            <p><strong>Cancellation Policy:</strong></p>
+            <ul>
+              <li> Subscriptions cannot be cancelled once activated</li>
+            </ul>
+            <p><strong>Refund Policy:</strong></p>
+            <ul>
+              <li>Unused days in weekly/monthly subscriptions will not be refunded </li>
+              <li>Failed Transaction refunds will be processed within 7-10 business days</li>
+              <li>No refunds for after activation</li>
+            </ul>
+            <p>In case of issues regarding refund contact the provided number.</p>
+          `;
+          break;
+          
+        case 'privacy':
+          html = `
+            <h3>Privacy Policy</h3>
+            <p>WashSmart is committed to protecting your personal information:</p>
+            <ul>
+              <li>We collect only necessary data for service provision</li>
+              <li>Payment information is processed securely through our payment partners</li>
+              <li>Usage data helps us improve our services</li>
+              <li>We do not share your data with third parties without consent</li>
+              <li>You may request account deletion at any time</li>
+            </ul>
+            <p>Our full privacy policy complies with all applicable data protection regulations.</p>
+          `;
+          break;
+      }
+      
+      content.innerHTML = html;
+      modal.style.display = 'flex';
     }
     
-  function forceTurnOff() {
-    fetch("/force_turn_off", {
-      method: "POST"
-    }).then(() => check());
-  }
+    function closeModal() {
+      document.getElementById('contentModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside content
+    window.onclick = function(event) {
+      const modal = document.getElementById('contentModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+
   </script>
-  <button onclick="forceTurnOff()" style="margin-top: 10px; font-size: 12px; padding: 6px 10px;">Turn Off</button>
-    <footer style="background-color: #f8f9fa; padding: 20px; text-align: center;">
-    <nav>
-    <a href="#contact">Contact Us</a>
-    <a href="#terms">Terms and Conditions</a>
-    <a href="#refund">Cancellation & Refund</a>
-    <a href="#privacy">Privacy Policy</a>
-  </nav>
-
-  <section id="contact">
-    <h2>Contact Us</h2>
-    <p>Phone: 7664000017</p>
-    <p>Email: <a href="mailto:mkrgayan@gmail.com">mkrgayan@gmail.com</a></p>
-  </section>
-
-  <section id="terms">
-    <h2>Terms and Conditions</h2>
-    <p>
-      By accessing or using our services, you agree to be bound by these terms. We reserve the right to update or modify these terms at any time. Users are responsible for regularly reviewing these terms.
-    </p>
-  </section>
-
-  <section id="refund">
-    <h2>Cancellation and Refund Policy</h2>
-    <p>
-      All payments are non-refundable unless there is a proven issue with the service. Cancellations must be requested within 2 hours of payment. Refunds (if applicable) will be processed within 7 working days.
-    </p>
-  </section>
-
-  <section id="privacy">
-    <h2>Privacy Policy</h2>
-    <p>
-      We value your privacy and are committed to protecting your personal data. We do not share your information with third parties without your consent. Data is stored securely and used only for service-related communication.
-    </p>
-  </section>
-  <p>&copy; 2025 Mandeep. All rights reserved.</p>
-</footer>
-  
-
 </body>
 </html>

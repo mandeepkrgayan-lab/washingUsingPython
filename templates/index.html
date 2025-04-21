@@ -100,24 +100,6 @@
     <div class="loader" id="loader"></div>
     <div id="result"></div>
   </div>
-    <div id="contentModal" class="modal">
-    <div class="modal-content">
-      <span class="close-modal" onclick="closeModal()">&times;</span>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <footer>
-      <div class="footer-links">
-        <a href="#" onclick="showContent('contact')">Contact Us</a>
-        <a href="#" onclick="showContent('terms')">Terms</a>
-        <a href="#" onclick="showContent('refund')">Refunds</a>
-        <a href="#" onclick="showContent('privacy')">Privacy</a>
-      </div>
-      <p>&copy; 2025 WashSmart. All rights reserved.</p>
-    </footer>
-  </div>
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
@@ -182,86 +164,12 @@
   }
   </script>
   <button onclick="forceTurnOff()" style="margin-top: 10px; font-size: 12px; padding: 6px 10px;">Turn Off</button>
-    function showContent(type) {
-      const modal = document.getElementById('contentModal');
-      const content = document.getElementById('modalContent');
-      
-      let html = '';
-      switch(type) {
-        case 'contact':
-          html = `
-            <h3>Contact Us</h3>
-            <p>For any inquiries or support, please reach out to us:</p>
-            <p><strong>Email:</strong> mkrgayan@gmail.com</p>
-            <p><strong>Phone:</strong> +91 7664000017</p>
-            <p><strong>Address:</strong> Block H ,NERIST </p>
-            <p> Available to assist you with any questions regarding your WashSmart service.</p>
-          `;
-          break;
-          
-        case 'terms':
-          html = `
-            <h3>Terms and Conditions</h3>
-            <p>By using WashSmart services, you agree to the following terms:</p>
-            <ol>
-              <li>Subscriptions are non-transferable and valid only for the registered user</li>
-              <li>Each wash cycle must be initiated by the subscribed user</li>
-              <li>Misuse of the service may result in account termination</li>
-              <li>We reserve the right to modify subscription plans and pricing</li>
-              <li>Users are responsible for maintaining their account credentials</li>
-            </ol>
-            <p>Last updated: April 2025</p>
-          `;
-          break;
-          
-        case 'refund':
-          html = `
-            <h3>Cancellations and Refunds</h3>
-            <p><strong>Cancellation Policy:</strong></p>
-            <ul>
-              <li> Subscriptions cannot be cancelled once activated</li>
-            </ul>
-            <p><strong>Refund Policy:</strong></p>
-            <ul>
-              <li>Unused days in weekly/monthly subscriptions will not be refunded </li>
-              <li>Failed Transaction refunds will be processed within 7-10 business days</li>
-              <li>No refunds for after activation</li>
-            </ul>
-            <p>In case of issues regarding refund contact the provided number.</p>
-          `;
-          break;
-          
-        case 'privacy':
-          html = `
-            <h3>Privacy Policy</h3>
-            <p>WashSmart is committed to protecting your personal information:</p>
-            <ul>
-              <li>We collect only necessary data for service provision</li>
-              <li>Payment information is processed securely through our payment partners</li>
-              <li>Usage data helps us improve our services</li>
-              <li>We do not share your data with third parties without consent</li>
-              <li>You may request account deletion at any time</li>
-            </ul>
-            <p>Our full privacy policy complies with all applicable data protection regulations.</p>
-          `;
-          break;
-      }
-      
-      content.innerHTML = html;
-      modal.style.display = 'flex';
-    }
-    
-    function closeModal() {
-      document.getElementById('contentModal').style.display = 'none';
-    }
-    
-    // Close modal when clicking outside content
-    window.onclick = function(event) {
-      const modal = document.getElementById('contentModal');
-      if (event.target == modal) {
-        closeModal();
-      }
-    }  
+   <div class="footer">
+    <div><strong>Contact Us:</strong> For support, call 7664000017 or email us at mkrgayan@gmail.com.</div>
+    <div><strong>Terms and Conditions:</strong> By using our WashSmart services, you agree to follow the guidelines for fair use. Subscriptions are non-transferable and services are limited to the registered user.</div>
+    <div><strong>Cancellations and Refunds:</strong> Once a subscription is activated, cancellation is not available. Refunds are only applicable if there is a technical fault that prevents service delivery.</div>
+    <div><strong>Privacy Policy:</strong> We respect your privacy. Customer details are used only for subscription management and are never shared with third parties.</div>
+  </div>
 
 </body>
 </html>

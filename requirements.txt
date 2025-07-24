@@ -1,6 +1,6 @@
-Flask
-pymysql
-mysql-connector-python
+Flask==2.3.3
+pymysql==1.1.0
+mysql-connector-python==8.0.33
 os
 werkzeug==2.2.3
 requests

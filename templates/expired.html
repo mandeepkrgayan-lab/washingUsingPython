@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WashSmart - Expired</title>
+</head>
+<body>
+    <h2>Subscription Expired</h2>
+    <p>Phone: {{ phone }}</p>
+
+    <form action="/pay" method="post">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <button name="plan" value="daily">1 Day - ₹40</button>
+        <button name="plan" value="weekly">1 Week - ₹89</button>
+        <button name="plan" value="monthly">1 Month - ₹169</button>
+        <button name="plan" value="6months">6 Months - ₹499</button>
+    </form>
+</body>
+</html>

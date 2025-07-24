@@ -193,16 +193,28 @@ def update_user():
 def emergency():
     phone = request.json.get("phone")
     today = datetime.today().date()
+
     conn = get_connection()
     cur = conn.cursor()
-    
-    # Allow only if user exists and has active plan
-    cur.execute("SELECT expiry FROM users WHERE phone=%s", (phone,))
-    row = cur.fetchone()
-    if not row or row[0] < today:
-        return "Not eligible", 400
 
-    cur.execute("UPDATE users SET in_use=TRUE, used_at=NOW() WHERE phone=%s", (phone,))
+    # Check if user exists and is active
+    cur.execute("SELECT expiry, emergency_used_date FROM users WHERE phone=%s", (phone,))
+    row = cur.fetchone()
+    if not row:
+        return "User not found", 404
+
+    expiry, emergency_used_date = row
+    if expiry < today:
+        return "Subscription expired", 403
+
+    if emergency_used_date == today:
+        return "Emergency already used today", 403
+
+    # Mark emergency as used
+    cur.execute(
+        "UPDATE users SET in_use=TRUE, used_at=NOW(), emergency_used_date=%s WHERE phone=%s",
+        (today, phone)
+    )
     conn.commit()
     cur.close()
     conn.close()
@@ -212,7 +224,7 @@ def emergency():
     except:
         pass
 
-    return "Emergency Activated"
+    return "Emergency Activated", 200
 
 
 if __name__ == "__main__":

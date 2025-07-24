@@ -240,8 +240,8 @@ def add_customer():
 
     try:
         cur.execute("""
-            INSERT INTO users (phone, expiry, uses_today, last_used, in_use, emergency_used_date)
-            VALUES (%s, %s, 0, NULL, FALSE, NULL)
+            INSERT INTO users (phone, expiry,used_at, in_use, emergency_used_date)
+            VALUES (%s, %s,NULL,0 , NULL)
             ON DUPLICATE KEY UPDATE expiry = VALUES(expiry)
         """, (phone, expiry))
         conn.commit()

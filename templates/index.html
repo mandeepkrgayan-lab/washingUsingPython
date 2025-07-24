@@ -166,7 +166,6 @@
       method: "POST"
     }).then(() => check());
   }
-    @app.route("/emergency", methods=["POST"])
 function emergency() {
   const phone = document.getElementById("phone").value;
   if (!phone) return alert("Enter phone number");

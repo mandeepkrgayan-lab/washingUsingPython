@@ -1,8 +1,0 @@
-{
-  "build": {
-    "env": {
-      "PYTHONUNBUFFERED": "TRUE"
-    }
-  },
-  "start": "python app.py"
-}

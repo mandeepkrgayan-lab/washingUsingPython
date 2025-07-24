@@ -226,6 +226,35 @@ def emergency():
 
     return "Emergency Activated", 200
 
+@app.route("/add_customer", methods=["POST"])
+def add_customer():
+    data = request.json
+    phone = data.get("phone")
+    expiry = data.get("expiry")
+
+    if not phone or not expiry:
+        return "Phone and expiry required", 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            INSERT INTO users (phone, expiry, uses_today, last_used, in_use, emergency_used_date)
+            VALUES (%s, %s, 0, NULL, FALSE, NULL)
+            ON DUPLICATE KEY UPDATE expiry = VALUES(expiry)
+        """, (phone, expiry))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return str(e), 500
+    finally:
+        cur.close()
+        conn.close()
+
+    return "Customer added or updated successfully", 200
+
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

@@ -23,5 +23,30 @@
     </tr>
     {% endfor %}
   </table>
+  <button onclick="addCustomer()">Add New Customer</button>
+  <script>
+    function addCustomer() {
+  const phone = prompt("Enter new customer phone number:");
+  if (!phone) return alert("Phone number required");
+
+  const expiry = prompt("Enter expiry date (YYYY-MM-DD):");
+  if (!expiry || !/^\d{4}-\d{2}-\d{2}$/.test(expiry)) return alert("Invalid expiry format");
+
+  fetch("/add_customer", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ phone, expiry })
+  })
+  .then(res => res.text())
+  .then(msg => {
+    alert(msg);
+    check();  // reload data
+  })
+  .catch(err => alert("Error: " + err));
+}
+
+  </script>
 </body>
 </html>

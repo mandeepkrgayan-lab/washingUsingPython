@@ -7,14 +7,16 @@ import requests
 
 app = Flask(__name__)
 
-# MySQL config from environment
+# Constants
+OWNER_PHONE = "7664000017"
+TRIGGER_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html"
+FORCE_OFF_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=f7fdcb3b-c16d-4601-90e6-f0729cc038ac&token=3ac706a2-1e9a-4b07-90ef-116be4142ef7&response=json"
+
+# DB Config
 DB_HOST = os.getenv("MYSQLHOST")
 DB_USER = os.getenv("MYSQLUSER")
 DB_PASSWORD = os.getenv("MYSQLPASSWORD")
 DB_NAME = os.getenv("MYSQLDATABASE")
-
-TRIGGER_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=d613829d-a350-476b-b520-15e33c3d39f5&token=965a8bd9-75b5-4963-99dc-c2bc65767c17&response=html"
-FORCE_OFF_URL = "https://www.virtualsmarthome.xyz/url_routine_trigger/activate.php?trigger=f7fdcb3b-c16d-4601-90e6-f0729cc038ac&token=3ac706a2-1e9a-4b07-90ef-116be4142ef7&response=json"
 
 def get_connection():
     return pymysql.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
@@ -27,127 +29,100 @@ def init_db():
         phone VARCHAR(20) PRIMARY KEY,
         expiry DATE,
         in_use BOOLEAN DEFAULT FALSE,
-        used_at DATETIME
+        used_at DATETIME,
+        emergency_used DATE
     );
     """)
     conn.commit()
     cur.close()
     conn.close()
 
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/check")
-def check():
+@app.route("/admin")
+def admin():
     phone = request.args.get("phone")
+    if phone != OWNER_PHONE:
+        return "Unauthorized", 403
+
     conn = get_connection()
     cur = conn.cursor()
-
-    # Auto reset in_use if any user has crossed 30 minutes
-    cur.execute("SELECT phone, used_at FROM users WHERE in_use=TRUE")
-    active_user = cur.fetchone()
-    if active_user:
-        phone_active, used_at = active_user
-        elapsed = datetime.now() - used_at
-        if elapsed.total_seconds() > 1800:
-            cur.execute("UPDATE users SET in_use=FALSE, used_at=NULL WHERE phone=%s", (phone_active,))
-            conn.commit()
-            active_user = None
-
-    cur.execute("SELECT expiry, in_use, used_at FROM users WHERE phone=%s", (phone,))
-    row = cur.fetchone()
-
-    message = ""
-    action = ""
     today = datetime.today().date()
 
-    if row:
-        expiry, in_use, used_at = row
-        if expiry >= today:
-            if active_user and active_user[0] != phone:
-                elapsed = datetime.now() - active_user[1]
-                remaining = 1800 - elapsed.total_seconds()
-                message = f"Another user is using it. Time left: {int(remaining // 60)} min"
-            elif in_use:
-                elapsed = datetime.now() - used_at
-                remaining = 1800 - elapsed.total_seconds()
-                if remaining > 0:
-                    message = f"Machine is currently ON.<br>Time remaining: {int(remaining // 60)} min"
-                else:
-                    message = "Machine is currently ON."
-            else:
-                message = '<button onclick="turnOn()">Turn On</button>'
+    cur.execute("SELECT phone, expiry FROM users")
+    users = cur.fetchall()
+    expired = [u for u in users if u[1] < today]
+    active = [u for u in users if u[1] >= today]
+
+    categorized = {"daily": [], "weekly": [], "monthly": [], "six_month": []}
+    for phone, expiry in active:
+        days_left = (expiry - today).days
+        if days_left <= 1:
+            categorized["daily"].append(phone)
+        elif days_left <= 7:
+            categorized["weekly"].append(phone)
+        elif days_left <= 31:
+            categorized["monthly"].append(phone)
         else:
-            message = "Subscription expired. Choose a plan."
-            action = "pay"
+            categorized["six_month"].append(phone)
+
+    cur.close()
+    conn.close()
+    return render_template("admin.html", users=users, expired=expired, categorized=categorized)
+
+@app.route('/check', methods=['POST'])
+def check():
+    phone = request.form['phone']
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT expiry FROM users WHERE phone = %s", (phone,))
+    result = cur.fetchone()
+    today = datetime.today().date()
+
+    if phone == OWNER_PHONE:
+        return admin()
+
+    if result:
+        expiry = result[0]
+        if expiry >= today:
+            # Valid subscription
+            return render_template('active.html', phone=phone, expiry=expiry)
+        else:
+            # Expired subscription
+            return render_template('expired.html', phone=phone)
     else:
-        message = "No subscription found. Choose a plan."
-        action = "pay"
+        # New customer
+        return render_template('new_customer.html', phone=phone)
 
-    cur.close()
-    conn.close()
-    return jsonify({"message": message, "action": action})
-
-@app.route("/update_expiry", methods=["POST"])
-def update_expiry():
-    data = request.get_json()
-    phone = data["phone"]
-    days = data["days"]
-    expiry = datetime.today().date() + timedelta(days=days)
+@app.route('/emergency', methods=['POST'])
+def emergency():
+    phone = request.form['phone']
+    today = datetime.today().date()
 
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
-    INSERT INTO users (phone, expiry) VALUES (%s, %s)
-    ON DUPLICATE KEY UPDATE expiry=%s
-    """, (phone, expiry, expiry))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return "Updated"
 
-@app.route("/turn_on", methods=["POST"])
-def turn_on():
-    phone = request.json.get("phone")
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE users SET in_use=TRUE, used_at=NOW() WHERE phone=%s", (phone,))
+    cur.execute("SELECT expiry, emergency_used FROM users WHERE phone = %s", (phone,))
+    user = cur.fetchone()
+    if not user:
+        return "No such user", 404
+
+    expiry, emergency_used = user
+    if expiry < today:
+        return "Subscription expired", 403
+
+    if emergency_used == today:
+        return "Already used emergency today", 403
+
+    # Update emergency_used and trigger machine
+    cur.execute("UPDATE users SET emergency_used = %s WHERE phone = %s", (today, phone))
     conn.commit()
     cur.close()
     conn.close()
 
-    def turn_off():
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET in_use=FALSE, used_at=NULL WHERE phone=%s", (phone,))
-        conn.commit()
-        cur.close()
-        conn.close()
-
-    threading.Timer(1800, turn_off).start()
-
+    # Call virtual trigger
     try:
         requests.get(TRIGGER_URL)
     except:
         pass
 
-    return "Activated"
-
-@app.route("/force_turn_off", methods=["POST"])
-def force_turn_off():
-    try:
-        requests.get(FORCE_OFF_URL)
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET in_use=FALSE, used_at=NULL WHERE in_use=TRUE")
-        conn.commit()
-        cur.close()
-        conn.close()
-        return "Force Turned Off"
-    except Exception as e:
-        return str(e), 500
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    return "Emergency session activated for 45 mins"

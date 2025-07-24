@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <h2>All Customers</h2>
+  <table border="1">
+    <tr><th>Phone</th><th>Expiry</th><th>In Use</th><th>Last Used</th><th>Update Expiry</th></tr>
+    {% for phone, expiry, in_use, used_at in users %}
+    <tr>
+      <td>{{ phone }}</td>
+      <td>{{ expiry }}</td>
+      <td>{{ in_use }}</td>
+      <td>{{ used_at }}</td>
+      <td>
+        <form method="POST" action="/update_user">
+          <input type="hidden" name="phone" value="{{ phone }}">
+          <input type="date" name="new_expiry" required>
+          <button type="submit">Update</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

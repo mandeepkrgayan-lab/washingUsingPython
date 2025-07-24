@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h2>Admin Panel</h2>
+
+    <h3>Add New Customer</h3>
+    <form action="/add_customer" method="post">
+        <input type="text" name="phone" placeholder="Phone number" required>
+        <input type="date" name="expiry" required>
+        <button type="submit">Add Customer</button>
+    </form>
+
+    <h3>Modify Expiry Date</h3>
+    <form action="/modify_expiry" method="post">
+        <input type="text" name="phone" placeholder="Phone number" required>
+        <input type="date" name="expiry" required>
+        <button type="submit">Update Expiry</button>
+    </form>
+
+    <h3>Customer Summary</h3>
+    <p>Total Users: {{ total }}</p>
+    <p>Active Users: {{ active }}</p>
+    <p>Expired Users: {{ expired }}</p>
+    <p>Plan Counts:</p>
+    <ul>
+        <li>Daily: {{ daily }}</li>
+        <li>Weekly: {{ weekly }}</li>
+        <li>Monthly: {{ monthly }}</li>
+        <li>6 Months: {{ sixmonth }}</li>
+    </ul>
+</body>
+</html>

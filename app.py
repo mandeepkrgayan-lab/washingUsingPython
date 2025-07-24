@@ -147,6 +147,73 @@ def force_turn_off():
         return "Force Turned Off"
     except Exception as e:
         return str(e), 500
+from flask import session, redirect, url_for
+
+app.secret_key = 'mandeep'  # Required for sessions
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin():
+    if request.method == "POST":
+        user = request.form.get("username")
+        pwd = request.form.get("password")
+        if user == "admin" and pwd == "admin123":  # Change this for security
+            session['admin'] = True
+            return redirect("/dashboard")
+        else:
+            return render_template("admin_login.html", error="Invalid credentials")
+    return render_template("admin_login.html")
+
+@app.route("/dashboard")
+def dashboard():
+    if not session.get('admin'):
+        return redirect("/admin")
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT phone, expiry, in_use, used_at FROM users")
+    users = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template("admin_dashboard.html", users=users)
+
+@app.route("/update_user", methods=["POST"])
+def update_user():
+    if not session.get('admin'):
+        return redirect("/admin")
+    phone = request.form.get("phone")
+    new_expiry = request.form.get("new_expiry")
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET expiry=%s WHERE phone=%s", (new_expiry, phone))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect("/dashboard")
+
+@app.route("/emergency", methods=["POST"])
+def emergency():
+    phone = request.json.get("phone")
+    today = datetime.today().date()
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    # Allow only if user exists and has active plan
+    cur.execute("SELECT expiry FROM users WHERE phone=%s", (phone,))
+    row = cur.fetchone()
+    if not row or row[0] < today:
+        return "Not eligible", 400
+
+    cur.execute("UPDATE users SET in_use=TRUE, used_at=NOW() WHERE phone=%s", (phone,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    try:
+        requests.get(TRIGGER_URL)
+    except:
+        pass
+
+    return "Emergency Activated"
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

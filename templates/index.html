@@ -120,9 +120,9 @@
           if (data.action === 'pay') {
             result.innerHTML += `
               <div class="subscription-buttons">
-                <button onclick="pay('${phone}', 79, 1)">Daily - ₹79</button>
-                <button onclick="pay('${phone}', 119, 7)">Weekly - ₹119</button>
-                <button onclick="pay('${phone}', 199, 30)">Monthly - ₹199</button>
+                <button onclick="pay('${phone}', 49, 1)">Daily - ₹49</button>
+                <button onclick="pay('${phone}', 109, 7)">Weekly - ₹109</button>
+                <button onclick="pay('${phone}', 169, 30)">Monthly - ₹169</button>
               </div>
             `;
           }
@@ -131,7 +131,7 @@
 
     function pay(phone, amount, days) {
       const options = {
-        key: "rzp_live_Ztpt7waMqVTDJr",
+        key: "rzp_test_NhQFMV57BI5o45",
         amount: amount * 100,
         currency: "INR",
         name: "WashSmart",

@@ -126,3 +126,77 @@ def emergency():
         pass
 
     return "Emergency session activated for 45 mins"
+
+@app.route("/turn_on", methods=["POST"])
+def turn_on():
+    phone = request.form["phone"]
+    today = datetime.now().date()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT ExpiryDate, UsesToday, LastUsedDateTimestamp FROM subscriptions WHERE Phone=%s", (phone,))
+    row = cur.fetchone()
+
+    if row:
+        expiry, uses_today, last_used_date = row
+        expiry = expiry.date()
+        last_used_date = last_used_date.date() if last_used_date else None
+
+        if expiry >= today:
+            if last_used_date != today:
+                uses_today = 0  # Reset usage for new day
+            if uses_today < 2 or (uses_today == 2 and request.form.get("emergency") == "yes"):
+                cur.execute("UPDATE subscriptions SET UsesToday=%s, LastUsedDateTimestamp=%s WHERE Phone=%s",
+                            (uses_today + 1, today, phone))
+                conn.commit()
+                conn.close()
+                # Replace with your real ON link
+                requests.get("https://your-virtual-switch.com/turn-on")
+                return "Machine turned ON for 45 minutes."
+            else:
+                conn.close()
+                return "Usage limit exceeded for today."
+        else:
+            conn.close()
+            return "Subscription expired."
+
+    conn.close()
+    return "User not found."
+
+@app.route("/turn_off", methods=["POST"])
+def turn_off():
+    # Replace with your real OFF link
+    requests.get("https://your-virtual-switch.com/turn-off")
+    return "Machine turned OFF."
+
+@app.route("/emergency", methods=["POST"])
+def emergency():
+    phone = request.form["phone"]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE subscriptions SET UsesToday = 2 WHERE Phone=%s", (phone,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("turn_on"))
+
+@app.route("/add_customer", methods=["POST"])
+def add_customer():
+    phone = request.form["phone"]
+    expiry = request.form["expiry"]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO subscriptions (Phone, ExpiryDate, UsesToday, LastUsedDateTimestamp) VALUES (%s, %s, 0, NULL) ON DUPLICATE KEY UPDATE ExpiryDate=%s", (phone, expiry, expiry))
+    conn.commit()
+    conn.close()
+    return redirect("/")
+
+@app.route("/modify_expiry", methods=["POST"])
+def modify_expiry():
+    phone = request.form["phone"]
+    expiry = request.form["expiry"]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE subscriptions SET ExpiryDate=%s WHERE Phone=%s", (expiry, phone))
+    conn.commit()
+    conn.close()
+    return redirect("/")

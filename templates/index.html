@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WashSmart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --primary-color: #0093E9;
+      --secondary-color: #80D0C7;
+      --text-color: #ffffff;
+      --card-bg: rgba(255, 255, 255, 0.1);
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+    }
+
+    #container {
+      background: var(--card-bg);
+      padding: 30px 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h2 {
+      margin-top: 15px;
+    }
+
+    input, button {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #ffffff;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #eeeeee;
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 10px auto;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+
+    .subscription-buttons button {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <img src="https://cdn-icons-png.flaticon.com/512/3322/3322056.png" alt="Washing Machine Logo" class="logo">
+    <h2>Tycoon2.0 WashSmart</h2>
+    <input type="text" id="phone" placeholder="Enter phone number" />
+    <button onclick="check()">Check</button>
+    <div class="loader" id="loader"></div>
+    <div id="result"></div>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    function showLoader(show) {
+      document.getElementById("loader").style.display = show ? "block" : "none";
+    }
+
+    function check() {
+      const phone = document.getElementById("phone").value;
+      if (!phone) return alert("Enter phone number");
+      showLoader(true);
+      fetch(`/check?phone=${phone}`)
+        .then(res => res.json())
+        .then(data => {
+          showLoader(false);
+          const result = document.getElementById("result");
+          result.innerHTML = data.message;
+          if (data.action === 'pay') {
+            result.innerHTML += `
+              <div class="subscription-buttons">
+                <button onclick="pay('${phone}', 79, 1)">Daily - ₹79</button>
+                <button onclick="pay('${phone}', 119, 7)">Weekly - ₹119</button>
+                <button onclick="pay('${phone}', 199, 30)">Monthly - ₹199</button>
+              </div>
+            `;
+          }
+        });
+    }
+
+    function pay(phone, amount, days) {
+      const options = {
+        key: "rzp_live_Ztpt7waMqVTDJr",
+        amount: amount * 100,
+        currency: "INR",
+        name: "WashSmart",
+        description: `${days} day subscription`,
+        handler: function () {
+          fetch(`/update_expiry`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, days })
+          }).then(() => check());
+        },
+        prefill: { contact: phone }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+
+    function turnOn() {
+      fetch('/turn_on', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: document.getElementById("phone").value })
+      }).then(() => check());
+    }
+    
+  function forceTurnOff() {
+    fetch("/force_turn_off", {
+      method: "POST"
+    }).then(() => check());
+  }
+  </script>
+  <button onclick="forceTurnOff()" style="margin-top: 10px; font-size: 12px; padding: 6px 10px;">Turn Off</button>
+   <div class="footer">
+    <div><strong>Contact Us:</strong> For support, call 7664000017 or email us at mkrgayan@gmail.com.</div>
+    <div><strong>Terms and Conditions:</strong> By using our WashSmart services, you agree to follow the guidelines for fair use. Subscriptions are non-transferable and services are limited to the registered user.</div>
+    <div><strong>Cancellations and Refunds:</strong> Once a subscription is activated, cancellation is not available. Refunds are only applicable if there is a technical fault that prevents service delivery.</div>
+    <div><strong>Privacy Policy:</strong> We respect your privacy. Customer details are used only for subscription management and are never shared with third parties.</div>
+  </div>
+
+</body>
+</html>

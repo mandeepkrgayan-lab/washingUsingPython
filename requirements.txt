@@ -1,7 +1,7 @@
 Flask
 pymysql
 mysql-connector-python
-
+os
 werkzeug==2.2.3
 requests
 

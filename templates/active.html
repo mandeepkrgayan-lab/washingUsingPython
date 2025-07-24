@@ -1,5 +1,26 @@
-<p>Welcome! Your subscription is active.</p>
-<form method="POST" action="/turn_on">
-  <input type="hidden" name="phone" value="{{ phone }}">
-  <button type="submit">Turn On</button>
-</form>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WashSmart - Active</title>
+</head>
+<body>
+    <h2>Subscription Active</h2>
+    <p>Phone: {{ phone }}</p>
+    <p>Valid until: {{ expiry }}</p>
+
+    <form action="/turn_on" method="post">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <button type="submit">Turn ON Machine</button>
+    </form>
+
+    <form action="/turn_off" method="post">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <button type="submit">Turn OFF Machine</button>
+    </form>
+
+    <form action="/emergency" method="post">
+        <input type="hidden" name="phone" value="{{ phone }}">
+        <button type="submit">Emergency Extra Use</button>
+    </form>
+</body>
+</html>

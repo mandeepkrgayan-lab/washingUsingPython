@@ -173,7 +173,7 @@ def dashboard():
         return redirect("/admin")
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT phone, expiry, in_use, used_at FROM users")
+    cur.execute("SELECT phone, expiry, pin, in_use, used_at FROM users")
     users = cur.fetchall()
     cur.close()
     conn.close()

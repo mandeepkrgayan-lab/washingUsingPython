@@ -290,7 +290,28 @@ def verify_pin():
     if row and row[0]==pin:
         return jsonify({"success":True})
     return jsonify({"success":False})
+@app.route("/reset_pin", methods=["POST"])
+def reset_pin():
 
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    phone = request.form.get("phone")
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE users SET pin=NULL WHERE phone=%s",
+        (phone,)
+    )
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/dashboard")
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

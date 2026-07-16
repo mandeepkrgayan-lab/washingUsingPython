@@ -95,7 +95,14 @@
   <div id="container">
     <img src="https://cdn-icons-png.flaticon.com/512/3322/3322056.png" alt="Washing Machine Logo" class="logo">
     <h2>PG WashSmart</h2>
-    <input type="text" id="phone" placeholder="Enter phone number" />
+    <input
+    type="tel"
+    id="phone"
+    placeholder="Enter 10-digit phone number"
+    maxlength="10"
+    pattern="[0-9]{10}"
+    inputmode="numeric"
+    oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"/>
     <button onclick="check()">Check</button>
     <div class="loader" id="loader"></div>
     <div id="result"></div>
@@ -186,7 +193,7 @@ function savePin() {
 
     function pay(phone, amount, days) {
       const options = {
-        key: "rzp_test_NhQFMV57BI5o45",
+        key: "rzp_live_TEGjDIhcNsGW6J",
         amount: amount * 100,
         currency: "INR",
         name: "WashSmart",

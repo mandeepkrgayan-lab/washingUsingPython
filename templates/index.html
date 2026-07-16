@@ -269,12 +269,40 @@ function savePin() {
     }
 
     function turnOn() {
-      fetch('/turn_on', {
+
+    const result = document.getElementById("result");
+
+    result.innerHTML = `
+        <div class="loader" style="display:block"></div>
+
+        <h3>Starting Washing Machine...</h3>
+
+        <p>Please wait about 10 seconds.</p>
+
+        <small>
+        If the washing machine doesn't start,
+        press <b>Turn Off</b> and then <b>Turn On</b> again.
+        </small>
+    `;
+
+    fetch('/turn_on', {
         method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: document.getElementById("phone").value })
-      }).then(() => check());
-    }
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            phone: document.getElementById("phone").value
+        })
+    })
+    .then(() => {
+
+        setTimeout(() => {
+            check();
+        }, 8000);
+
+    });
+
+}
     
   function forceTurnOff() {
     fetch("/force_turn_off", {

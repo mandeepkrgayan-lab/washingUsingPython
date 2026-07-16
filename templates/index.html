@@ -118,18 +118,40 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
 function savePin() {
-      const phone=document.getElementById("phone").value;
-      const pin=document.getElementById("newPin").value;
-      if(pin.length!==4||!/^[0-9]{4}$/.test(pin)){alert("Enter a valid 4-digit PIN");return;}
-      fetch("/set_pin",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({phone,pin})
-      }).then(r=>r.json()).then(d=>{
-        if(d.success){alert("PIN saved");check();}
-        else alert(d.message||"Failed");
-      });
+    const phone = document.getElementById("phone").value;
+    const pin1 = document.getElementById("pin1").value;
+    const pin2 = document.getElementById("pin2").value;
+
+    if (!/^[0-9]{4}$/.test(pin1)) {
+        alert("PIN must be exactly 4 digits.");
+        return;
     }
+
+    if (pin1 !== pin2) {
+        alert("PINs do not match.");
+        return;
+    }
+
+    fetch("/set_pin", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            phone: phone,
+            pin: pin1
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert("PIN saved successfully.");
+            check();
+        } else {
+            alert(d.message || "Failed");
+        }
+    });
+}
 
     function verifyPin() {
       const phone=document.getElementById("phone").value;
@@ -165,20 +187,52 @@ function savePin() {
           const result = document.getElementById("result");
 
           if (data.message === "PIN_REQUIRED") {
-            result.innerHTML = `
-              <input type="password" id="pin" maxlength="4" placeholder="Enter 4-digit PIN">
-              <button onclick="verifyPin()">Continue</button>
-            `;
-            return;
-          }
+    result.innerHTML = `
+        <h3>Enter Your PIN</h3>
+
+        <input
+            type="password"
+            id="pin"
+            maxlength="4"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="current-password"
+            placeholder="4-Digit PIN"
+            oninput="this.value=this.value.replace(/\\D/g,'').slice(0,4)">
+
+        <button onclick="verifyPin()">Continue</button>
+    `;
+    return;
+}
 
           if (data.message === "SET_PIN") {
-            result.innerHTML = `
-              <input type="password" id="newPin" maxlength="4" placeholder="Create 4-digit PIN">
-              <button onclick="savePin()">Save PIN</button>
-            `;
-            return;
-          }
+    result.innerHTML = `
+        <h3>Create 4-Digit PIN</h3>
+
+        <input
+            type="password"
+            id="pin1"
+            maxlength="4"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="new-password"
+            placeholder="New PIN"
+            oninput="this.value=this.value.replace(/\\D/g,'').slice(0,4)">
+
+        <input
+            type="password"
+            id="pin2"
+            maxlength="4"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="new-password"
+            placeholder="Confirm PIN"
+            oninput="this.value=this.value.replace(/\\D/g,'').slice(0,4)">
+
+        <button onclick="savePin()">Save PIN</button>
+    `;
+    return;
+}
 
           result.innerHTML = data.message;
           if (data.action === 'pay') {

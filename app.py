@@ -27,7 +27,8 @@ def init_db():
         phone VARCHAR(20) PRIMARY KEY,
         expiry DATE,
         in_use BOOLEAN DEFAULT FALSE,
-        used_at DATETIME
+        used_at DATETIME,
+        pin VARCHAR(4) DEFAULT NULL
     );
     """)
     conn.commit()
@@ -55,7 +56,7 @@ def check():
             conn.commit()
             active_user = None
 
-    cur.execute("SELECT expiry, in_use, used_at FROM users WHERE phone=%s", (phone,))
+    cur.execute("SELECT expiry, in_use, used_at, pin FROM users WHERE phone=%s", (phone,))
     row = cur.fetchone()
 
     message = ""
@@ -63,7 +64,7 @@ def check():
     today = datetime.today().date()
 
     if row:
-        expiry, in_use, used_at = row
+        expiry, in_use, used_at, pin = row
         if expiry >= today:
             if active_user and active_user[0] != phone:
                 elapsed = datetime.now() - active_user[1]
@@ -77,7 +78,10 @@ def check():
                 else:
                     message = "Machine is currently ON."
             else:
-                message = '<button onclick="turnOn()">Turn On</button>'
+                if pin:
+                    message = "PIN_REQUIRED"
+                else:
+                    message = "SET_PIN"
         else:
             message = "Subscription expired. Choose a plan."
             action = "pay"
@@ -99,7 +103,7 @@ def update_expiry():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-    INSERT INTO users (phone, expiry) VALUES (%s, %s)
+    INSERT INTO users (phone, expiry, pin) VALUES (%s, %s, NULL)
     ON DUPLICATE KEY UPDATE expiry=%s
     """, (phone, expiry, expiry))
     conn.commit()
@@ -255,6 +259,37 @@ def add_customer():
     return "Customer added or updated successfully", 200
 
 
+
+
+@app.route("/set_pin", methods=["POST"])
+def set_pin():
+    data=request.get_json()
+    phone=data.get("phone")
+    pin=data.get("pin")
+    if not pin or len(pin)!=4 or not pin.isdigit():
+        return jsonify({"success":False,"message":"Invalid PIN"})
+    conn=get_connection()
+    cur=conn.cursor()
+    cur.execute("UPDATE users SET pin=%s WHERE phone=%s",(pin,phone))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"success":True})
+
+@app.route("/verify_pin", methods=["POST"])
+def verify_pin():
+    data=request.get_json()
+    phone=data.get("phone")
+    pin=data.get("pin")
+    conn=get_connection()
+    cur=conn.cursor()
+    cur.execute("SELECT pin FROM users WHERE phone=%s",(phone,))
+    row=cur.fetchone()
+    cur.close()
+    conn.close()
+    if row and row[0]==pin:
+        return jsonify({"success":True})
+    return jsonify({"success":False})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

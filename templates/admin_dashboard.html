@@ -1,57 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Dashboard</title>
+    <title>Admin Dashboard</title>
 
-  <style>
-    body{
-      font-family: Arial, sans-serif;
-      margin:20px;
-    }
+    <style>
+        body{
+            font-family:Arial,sans-serif;
+            margin:20px;
+            background:#f7f7f7;
+        }
 
-    table{
-      border-collapse:collapse;
-      width:100%;
-    }
+        h2{
+            margin-bottom:15px;
+        }
 
-    th,td{
-      border:1px solid #ccc;
-      padding:10px;
-      text-align:center;
-    }
+        #search{
+            width:300px;
+            padding:10px;
+            margin-bottom:20px;
+            font-size:16px;
+        }
 
-    th{
-      background:#f2f2f2;
-    }
+        table{
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+        }
 
-    button{
-      padding:6px 12px;
-      cursor:pointer;
-    }
+        th,td{
+            border:1px solid #ddd;
+            padding:10px;
+            text-align:center;
+        }
 
-    .reset-btn{
-      background:#ff4444;
-      color:white;
-      border:none;
-      border-radius:4px;
-    }
+        th{
+            background:#2196F3;
+            color:white;
+        }
 
-    .update-btn{
-      background:#4CAF50;
-      color:white;
-      border:none;
-      border-radius:4px;
-    }
+        button{
+            padding:7px 12px;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+        }
 
-    .add-btn{
-      margin-top:20px;
-      background:#2196F3;
-      color:white;
-      border:none;
-      border-radius:4px;
-      padding:10px 15px;
-    }
-  </style>
+        .update-btn{
+            background:#4CAF50;
+            color:white;
+        }
+
+        .reset-btn{
+            background:#f44336;
+            color:white;
+        }
+
+        .add-btn{
+            margin-top:20px;
+            background:#2196F3;
+            color:white;
+            padding:10px 18px;
+        }
+
+        input[type=date]{
+            padding:6px;
+        }
+
+    </style>
 
 </head>
 
@@ -59,7 +74,13 @@
 
 <h2>All Customers</h2>
 
-<table>
+<input
+type="text"
+id="search"
+placeholder="🔍 Search by phone number..."
+onkeyup="searchCustomer()">
+
+<table id="customerTable">
 
 <tr>
     <th>Phone</th>
@@ -95,7 +116,10 @@
 
 <form method="POST" action="/update_user">
 
-<input type="hidden" name="phone" value="{{ phone }}">
+<input
+type="hidden"
+name="phone"
+value="{{ phone }}">
 
 <input
 type="date"
@@ -141,8 +165,6 @@ Reset PIN
 
 </table>
 
-<br>
-
 <button
 class="add-btn"
 onclick="addCustomer()">
@@ -151,63 +173,83 @@ Add New Customer
 
 <script>
 
-function addCustomer() {
+function searchCustomer(){
 
-const phone = prompt("Enter new customer phone number:");
+    let input=document.getElementById("search");
+    let filter=input.value.toUpperCase();
 
-if (!phone)
-return alert("Phone number required");
+    let table=document.getElementById("customerTable");
+    let tr=table.getElementsByTagName("tr");
 
-const expiry = prompt("Enter expiry date (YYYY-MM-DD):");
+    for(let i=1;i<tr.length;i++){
 
-if (!expiry || !/^\\d{4}-\\d{2}-\\d{2}$/.test(expiry))
-return alert("Invalid expiry format");
+        let td=tr[i].getElementsByTagName("td")[0];
 
-fetch("/add_customer",{
+        if(td){
 
-method:"POST",
+            let txt=td.textContent||td.innerText;
 
-headers:{
-"Content-Type":"application/json"
-},
+            if(txt.toUpperCase().indexOf(filter)>-1){
+                tr[i].style.display="";
+            }else{
+                tr[i].style.display="none";
+            }
 
-body:JSON.stringify({
-phone,
-expiry
-})
+        }
 
-})
+    }
 
-.then(res=>res.text())
+}
 
-.then(msg=>{
+function addCustomer(){
 
-alert(msg);
+    const phone=prompt("Enter new customer phone number:");
 
-location.reload();
+    if(!phone)
+        return alert("Phone number required");
 
-})
+    if(!/^[6-9][0-9]{9}$/.test(phone))
+        return alert("Invalid phone number");
 
-.catch(err=>alert(err));
+    const expiry=prompt("Enter expiry date (YYYY-MM-DD):");
+
+    if(!expiry||!/^\d{4}-\d{2}-\d{2}$/.test(expiry))
+        return alert("Invalid expiry format");
+
+    fetch("/add_customer",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            phone:phone,
+            expiry:expiry
+        })
+
+    })
+
+    .then(res=>res.text())
+
+    .then(msg=>{
+
+        alert(msg);
+
+        location.reload();
+
+    })
+
+    .catch(err=>{
+
+        alert("Error : "+err);
+
+    });
 
 }
 
 </script>
 
-</body>
-</html>    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ phone, expiry })
-  })
-  .then(res => res.text())
-  .then(msg => {
-    alert(msg);
-    check();  // reload data
-  })
-  .catch(err => alert("Error: " + err));
-}
-
-  </script>
 </body>
 </html>

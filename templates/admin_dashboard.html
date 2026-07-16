@@ -2,39 +2,200 @@
 <html>
 <head>
   <title>Admin Dashboard</title>
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      margin:20px;
+    }
+
+    table{
+      border-collapse:collapse;
+      width:100%;
+    }
+
+    th,td{
+      border:1px solid #ccc;
+      padding:10px;
+      text-align:center;
+    }
+
+    th{
+      background:#f2f2f2;
+    }
+
+    button{
+      padding:6px 12px;
+      cursor:pointer;
+    }
+
+    .reset-btn{
+      background:#ff4444;
+      color:white;
+      border:none;
+      border-radius:4px;
+    }
+
+    .update-btn{
+      background:#4CAF50;
+      color:white;
+      border:none;
+      border-radius:4px;
+    }
+
+    .add-btn{
+      margin-top:20px;
+      background:#2196F3;
+      color:white;
+      border:none;
+      border-radius:4px;
+      padding:10px 15px;
+    }
+  </style>
+
 </head>
+
 <body>
-  <h2>All Customers</h2>
-  <table border="1">
-    <tr><th>Phone</th><th>Expiry</th><th>In Use</th><th>Last Used</th><th>Update Expiry</th></tr>
-    {% for phone, expiry, in_use, used_at in users %}
-    <tr>
-      <td>{{ phone }}</td>
-      <td>{{ expiry }}</td>
-      <td>{{ in_use }}</td>
-      <td>{{ used_at }}</td>
-      <td>
-        <form method="POST" action="/update_user">
-          <input type="hidden" name="phone" value="{{ phone }}">
-          <input type="date" name="new_expiry" required>
-          <button type="submit">Update</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-  <button onclick="addCustomer()">Add New Customer</button>
-  <script>
-    function addCustomer() {
-  const phone = prompt("Enter new customer phone number:");
-  if (!phone) return alert("Phone number required");
 
-  const expiry = prompt("Enter expiry date (YYYY-MM-DD):");
-  if (!expiry || !/^\d{4}-\d{2}-\d{2}$/.test(expiry)) return alert("Invalid expiry format");
+<h2>All Customers</h2>
 
-  fetch("/add_customer", {
-    method: "POST",
-    headers: {
+<table>
+
+<tr>
+    <th>Phone</th>
+    <th>Expiry</th>
+    <th>PIN</th>
+    <th>In Use</th>
+    <th>Last Used</th>
+    <th>Update Expiry</th>
+    <th>Reset PIN</th>
+</tr>
+
+{% for phone, expiry, pin, in_use, used_at in users %}
+
+<tr>
+
+<td>{{ phone }}</td>
+
+<td>{{ expiry }}</td>
+
+<td>
+{% if pin %}
+{{ pin }}
+{% else %}
+<span style="color:red;">Not Set</span>
+{% endif %}
+</td>
+
+<td>{{ in_use }}</td>
+
+<td>{{ used_at }}</td>
+
+<td>
+
+<form method="POST" action="/update_user">
+
+<input type="hidden" name="phone" value="{{ phone }}">
+
+<input
+type="date"
+name="new_expiry"
+required>
+
+<br><br>
+
+<button
+class="update-btn"
+type="submit">
+Update
+</button>
+
+</form>
+
+</td>
+
+<td>
+
+<form
+method="POST"
+action="/reset_pin">
+
+<input
+type="hidden"
+name="phone"
+value="{{ phone }}">
+
+<button
+class="reset-btn"
+type="submit">
+Reset PIN
+</button>
+
+</form>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<br>
+
+<button
+class="add-btn"
+onclick="addCustomer()">
+Add New Customer
+</button>
+
+<script>
+
+function addCustomer() {
+
+const phone = prompt("Enter new customer phone number:");
+
+if (!phone)
+return alert("Phone number required");
+
+const expiry = prompt("Enter expiry date (YYYY-MM-DD):");
+
+if (!expiry || !/^\\d{4}-\\d{2}-\\d{2}$/.test(expiry))
+return alert("Invalid expiry format");
+
+fetch("/add_customer",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+phone,
+expiry
+})
+
+})
+
+.then(res=>res.text())
+
+.then(msg=>{
+
+alert(msg);
+
+location.reload();
+
+})
+
+.catch(err=>alert(err));
+
+}
+
+</script>
+
+</body>
+</html>    headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ phone, expiry })

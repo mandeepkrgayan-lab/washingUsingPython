@@ -160,7 +160,7 @@ def admin():
     if request.method == "POST":
         user = request.form.get("username")
         pwd = request.form.get("password")
-        if user == "admin" and pwd == "admin123":  # Change this for security
+        if user == "admin" and pwd == "Man@2001":  # Change this for security
             session['admin'] = True
             return redirect("/dashboard")
         else:
